@@ -7,7 +7,10 @@ typedef struct _Node{  //구조체 이름 _Node
 } Node;  // 구조체 별칭 Node
 
 // function declaration
-// Node* create_node();
-// void add_node(Node* curr_node);
-// void delete_node();
 
+Node* create_node(int);
+Node* find_node(Node*, int);
+void insert_node(Node*, int, unsigned);
+void delete_node(Node*, int);
+void delete_all(Node*);
+void print(Node*);
