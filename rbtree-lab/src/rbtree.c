@@ -31,7 +31,6 @@ void delete_rbtree(rbtree *t) {
   free(t);
 }
 
-// rotate 함수에는 항상 윗 노드가 들어감
 // helper function for insertion_fixup
 void left_rotate(rbtree *t, node_t* z){
   /*
@@ -115,7 +114,6 @@ void insertion_fixup(rbtree* t, node_t* z){
       }
 
       //case2: parent, uncle 둘다 빨간색일 때
-      //이때는  z = grandparents 또 double red 가능성 있기 때문에 while문 한번 더 체크
       else if (uncle->color == RBTREE_RED){
         parents->color = uncle->color = RBTREE_BLACK;
         grandparents->color = (grandparents == t->root) ? RBTREE_BLACK : RBTREE_RED ;
@@ -188,27 +186,184 @@ node_t *rbtree_insert(rbtree *t, const key_t key) {
 }
 
 node_t *rbtree_find(const rbtree *t, const key_t key) {
-  // TODO: implement find
-  return t->root;
+ // TODO: implement find
+  node_t* ptr = t->root;
+  while(ptr){
+    if (ptr->key > key)
+      ptr = ptr->left;
+    else if (ptr->key < key)
+      ptr = ptr->right;
+    else
+      return ptr;
+  }
+  return NULL;
 }
 
 node_t *rbtree_min(const rbtree *t) {
   // TODO: implement find
-  return t->root;
+  node_t* ptr = t->root;
+  while(ptr->left){
+      ptr = ptr->left;
+  }
+  return ptr;
 }
 
 node_t *rbtree_max(const rbtree *t) {
   // TODO: implement find
-  return t->root;
+  node_t* ptr = t->root;
+  while(ptr->right){
+      ptr = ptr->right;
+  }
+  return ptr;}
+
+// helper function for rbtree_erase
+void swap_node(rbtree* t, node_t* out, node_t* in){
+    if (out->parent == NULL)
+        t->root = in;
+    else if (out == out->parent->left)
+        out->parent->left = in;
+    else if (out == out->parent->right)
+        out->parent->right = in;
+    if (in != NULL)
+        in->parent = out->parent;
 }
 
-int rbtree_erase(rbtree *t, node_t *p) {
-  // TODO: implement erase
+// helper function for rbtree_erase
+void delete_fixup(rbtree* t, node_t* x){
+    while (x!= t->root && x->color == RBTREE_BLACK){
 
+        // x가 왼쪽 자식일 때
+        if (x == x->parent->left){
+            node_t* w = x->parent->right;
+
+            // case 1 - sibling 이 red일 때
+            if (w->color == RBTREE_RED){
+                w->color = RBTREE_BLACK;
+                x->parent->color = RBTREE_RED;
+                left_rotate(t, x->parent);
+                w = x->parent->right;
+            }
+            // case 2 - sibling, sibling children 모두 black 일 때
+            if (w->left->color == RBTREE_BLACK && w->right->color == RBTREE_BLACK){
+                w->color = RBTREE_RED;
+                x = x->parent;
+            }
+            else{
+                // case 3 - sibling, sibling right 이 black, left가 red 일 때 
+                if (w->right->color == RBTREE_BLACK){
+                    w->left->color = RBTREE_BLACK;
+                    w->color = RBTREE_RED;
+                    right_rotate(t,w);  //w->right 가 red되고 case 4로 넘어감
+                    w = x->parent->right;
+                }
+                // case 4 - sibling 이 black, sibling right이 red 일때
+                if (w->right->color == RBTREE_RED){
+                    w->color = x->parent->color;
+                    x->parent->color = RBTREE_BLACK;
+                    w->right->color = RBTREE_BLACK;
+                    left_rotate(t, x->parent);
+                    // while 문을 끝냄과 동시에 root 검은색으로 칠해주기 위해
+                    x = t->root;
+                }
+            }
+        }
+
+        // x가 오른쪽 자식일 때
+        else{
+            node_t * w = x->parent->left;
+
+            // case 1 - sibling이 red일 때
+            if (w->color == RBTREE_RED){
+                w->color = RBTREE_BLACK;
+                x->parent->color = RBTREE_RED;
+                right_rotate(t, x->parent);
+                w = x->parent->left;
+            }
+            // case 2- sibling, sibling children 모두 black일 때
+            if (w->color ==RBTREE_BLACK &&  w->left->color == RBTREE_BLACK && w->right->color == RBTREE_BLACK){
+                w->color = RBTREE_RED;
+                x = x->parent;
+            }
+            else{
+                // case 3 - sibling left가 black, right이 red 일 때
+                if (w->left->color == RBTREE_BLACK){
+                    w->right->color = RBTREE_BLACK;
+                    w->color = RBTREE_RED;
+                    left_rotate(t, w);
+                    w = x->parent->left;
+                }
+                // case 4 - sibling left가 red일 때
+                if (w->left->color == RBTREE_RED){
+                    w->color = x->parent->color;
+                    x->parent->color = RBTREE_BLACK;
+                    w->left->color = RBTREE_BLACK;
+                    right_rotate(t, x->parent);
+                    x = t->root;
+                }
+            }
+        }
+    }
+
+    x->color = RBTREE_BLACK;
+}
+int rbtree_erase(rbtree *t, node_t *target) {
+  // TODO: implement erase
+  node_t *y = target;
+  node_t *x = NULL;
+  color_t original_color = target->color;
+
+  // leaf node일 때
+  if (!target->left && !target->right){
+      if (target->parent == NULL)
+        t->root = NULL;
+      else{
+          if (target == target->parent->right)
+            target->parent->right = NULL;
+          else
+            target->parent->left = NULL;
+      }
+  }
+  // 오른쪽 자식밖에 없을 때
+  else if (!target->left){
+      x = target->right;
+      swap_node(t, target, x);
+  }
+  // 왼쪽 자식밖에 없을 때
+  else if (!target->right){
+    x = target->left;
+    swap_node(t, target, x);
+  }
+  // 자식이 두명 있을 때
+  else{
+      y = target->right;
+      while(y->left){y = y->left;}
+      // 자식이 두명 있을 때는 original_color 바꾸기
+      original_color = y->color;
+      x = y->right;
+      if (x!= NULL && y->parent == target)
+        x->parent = target;
+      else{ // if (y->right){
+          // 원래 y자리에 y->right넣는거임
+          swap_node(t, y, y->right);
+          y->right = target->right;
+          if (y->right)
+            y->right->parent = y;
+      }
+      //원래 target 자리에 y넣는거임
+      swap_node(t, target, y);
+      y->left = target->left;
+      y->left->parent = y;
+      y->color = target->color;
+  }  
+  if (x!= NULL && original_color == RBTREE_BLACK)
+    delete_fixup(t, x);
+
+  free(target);
   return 0;
 }
 
 int rbtree_to_array(const rbtree *t, key_t *arr, const size_t n) {
   // TODO: implement to_array
+
   return 0;
 }
