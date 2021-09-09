@@ -176,8 +176,11 @@ node_t *rbtree_insert(rbtree *t, const key_t key) {
     else if (current->key < key)
       current = current ->right;
     // key값이 이미 있을 때  
-    else
+    // newnode 안쓸 거니깐 free 해주는거 까먹지 말기
+    else{
+      free(newnode);
       return t->root;
+    }
   }
   // 새로운 값의 부모 update
   newnode->parent = parent;
