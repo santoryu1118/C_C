@@ -4,6 +4,7 @@
         "stdlib.h": "c",
         "stdio.h": "c",
         "malloc.h": "c",
-        "rbtree.h": "c"
+        "rbtree.h": "c",
+        "stdbool.h": "c"
     }
 }
