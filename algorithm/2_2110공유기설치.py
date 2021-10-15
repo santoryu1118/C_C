@@ -13,7 +13,7 @@ max_dist = 0
 
 while start <= end:
     # 끝집과 끝집 사이 거리가 10이고 공유기 4개 필요하면, 최대 가능 길이가 10//4 = 2 임
-    max_possible_dist = (start + end) // 2
+    max_possible_dist = (start + end) // C
     # 맨 앞집은 와드
     cnt = 1
     current_pos = 0
